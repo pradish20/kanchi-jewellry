@@ -3,6 +3,7 @@ import { Product, Category, ProductImage } from '../types/database';
 
 export interface GetProductsParams {
   categorySlug?: string;
+  categoryId?: string;
   featuredOnly?: boolean;
   searchQuery?: string;
   sortBy?: 'featured' | 'newest' | 'price_asc' | 'price_desc';
@@ -17,7 +18,7 @@ export interface GetProductsParams {
 // Curated architectural fallback products used when Supabase is not yet connected or tables are empty
 export const FALLBACK_CATEGORIES: Category[] = [
   {
-    id: 'cat-rings',
+    id: 'c1111111-1111-1111-1111-111111111111',
     name: 'Rings',
     slug: 'rings',
     description: 'Handcrafted solitaire, cocktail, and heritage polki rings in 22K hallmarked gold.',
@@ -26,7 +27,7 @@ export const FALLBACK_CATEGORIES: Category[] = [
     sort_order: 1,
   },
   {
-    id: 'cat-chains',
+    id: 'c2222222-2222-2222-2222-222222222222',
     name: 'Chains',
     slug: 'chains',
     description: 'Graceful twisted, rope, and traditional temple link chains crafted with heirloom finesse.',
@@ -35,7 +36,7 @@ export const FALLBACK_CATEGORIES: Category[] = [
     sort_order: 2,
   },
   {
-    id: 'cat-bracelets',
+    id: 'c3333333-3333-3333-3333-333333333333',
     name: 'Bracelets',
     slug: 'bracelets',
     description: 'Sculptural temple kangan bangles, diamond cuff bracelets, and delicate filigree cuffs.',
@@ -44,7 +45,7 @@ export const FALLBACK_CATEGORIES: Category[] = [
     sort_order: 3,
   },
   {
-    id: 'cat-necklaces',
+    id: 'c4444444-4444-4444-4444-444444444444',
     name: 'Necklaces',
     slug: 'necklaces',
     description: 'Regal royal chokers, uncut polki haar, and bridal statement necklaces with natural gemstones.',
@@ -63,7 +64,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     description: 'A magnificent handcrafted cocktail ring featuring an uncut polki diamond encircled by fine 22K yellow gold filigree and subtle black enamel accents.',
     price: 84500,
     discount_price: 79900,
-    category_id: 'cat-rings',
+    category_id: 'c1111111-1111-1111-1111-111111111111',
     material: '22K Gold & Polki Diamond',
     weight: '8.4 grams',
     dimensions: '22mm diameter',
@@ -101,7 +102,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     description: 'Classical South Indian heritage rope chain intricately twisted by master goldsmiths in hallmarked 22K gold. Elegant when worn solo or layered.',
     price: 125000,
     discount_price: null,
-    category_id: 'cat-chains',
+    category_id: 'c2222222-2222-2222-2222-222222222222',
     material: '22K Hallmarked Gold',
     weight: '24.2 grams',
     dimensions: '20 inches length',
@@ -131,7 +132,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     description: 'A pair of traditional solid gold temple bangles adorned with high-relief floral carvings and bezel-set Burmese rubies.',
     price: 248000,
     discount_price: 235000,
-    category_id: 'cat-bracelets',
+    category_id: 'c3333333-3333-3333-3333-333333333333',
     material: '22K Gold & Natural Rubies',
     weight: '46.8 grams',
     dimensions: 'Size 2.6 (60mm diameter)',
@@ -161,7 +162,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     description: 'Opulent bridal choker featuring graduating rows of uncut diamonds with Basra pearl drops and handcrafted emerald cabochons.',
     price: 395000,
     discount_price: 375000,
-    category_id: 'cat-necklaces',
+    category_id: 'c4444444-4444-4444-4444-444444444444',
     material: '22K Gold, Polki & Basra Pearls',
     weight: '72.6 grams',
     dimensions: 'Adjustable dori thread (14-18 in)',
@@ -191,7 +192,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     description: 'Understated modern eternity ring in 18K yellow gold flush-set with brilliant-cut diamonds. Minimal, contemporary luxury.',
     price: 52000,
     discount_price: null,
-    category_id: 'cat-rings',
+    category_id: 'c1111111-1111-1111-1111-111111111111',
     material: '18K Gold & VVS Diamonds',
     weight: '4.1 grams',
     dimensions: '3mm band width',
@@ -221,7 +222,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     description: 'A sleek Italian-inspired interlocking box link chain sculpted in polished 22K yellow gold with a secure safety lobster clasp.',
     price: 98000,
     discount_price: 92000,
-    category_id: 'cat-chains',
+    category_id: 'c2222222-2222-2222-2222-222222222222',
     material: '22K Yellow Gold',
     weight: '18.0 grams',
     dimensions: '18 inches length',
@@ -251,7 +252,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     description: 'Delicate architectural open cuff bracelet crafted with lace-like gold wirework and cabochon emerald terminal caps.',
     price: 142000,
     discount_price: null,
-    category_id: 'cat-bracelets',
+    category_id: 'c3333333-3333-3333-3333-333333333333',
     material: '22K Gold & Zambian Emeralds',
     weight: '26.5 grams',
     dimensions: 'Adjustable open wrist size',
@@ -281,7 +282,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     description: 'Classic South Indian Kasu Mala long necklace featuring embossed Lakshmi coin medallions crowned by sculpted peacock motifs.',
     price: 460000,
     discount_price: 438000,
-    category_id: 'cat-necklaces',
+    category_id: 'c4444444-4444-4444-4444-444444444444',
     material: '22K Hallmarked Gold',
     weight: '88.2 grams',
     dimensions: '26 inches long haram',
@@ -346,10 +347,18 @@ export const productsService = {
       let filtered = [...FALLBACK_PRODUCTS];
 
       if (params.categorySlug) {
-        const cat = FALLBACK_CATEGORIES.find((c) => c.slug === params.categorySlug);
+        const cat = FALLBACK_CATEGORIES.find(
+          (c) =>
+            c.slug.toLowerCase() === params.categorySlug?.toLowerCase() ||
+            c.name.toLowerCase() === params.categorySlug?.toLowerCase()
+        );
         if (cat) {
           filtered = filtered.filter((p) => p.category_id === cat.id);
         }
+      }
+
+      if (params.categoryId) {
+        filtered = filtered.filter((p) => p.category_id === params.categoryId);
       }
 
       if (params.featuredOnly) {
@@ -411,11 +420,26 @@ export const productsService = {
         const { data: catData } = await supabase
           .from('categories')
           .select('id')
-          .eq('slug', params.categorySlug)
-          .single();
+          .ilike('slug', params.categorySlug)
+          .maybeSingle();
+
         if (catData?.id) {
           query = query.eq('category_id', catData.id);
+        } else {
+          const { data: catByName } = await supabase
+            .from('categories')
+            .select('id')
+            .ilike('name', params.categorySlug)
+            .maybeSingle();
+
+          if (catByName?.id) {
+            query = query.eq('category_id', catByName.id);
+          }
         }
+      }
+
+      if (params.categoryId) {
+        query = query.eq('category_id', params.categoryId);
       }
 
       if (params.featuredOnly) {
@@ -499,12 +523,71 @@ export const productsService = {
     return products;
   },
 
+  // Helper to extract strictly valid database columns for products table
+  // Ensures category_id UUID is stored and never sends a non-existent 'category' column
+  sanitizeProductPayload(productData: Partial<Product>): Record<string, any> {
+    const raw = productData as Record<string, any>;
+
+    const payload: Record<string, any> = {
+      name: raw.name !== undefined ? raw.name : undefined,
+      slug: raw.slug !== undefined ? raw.slug : undefined,
+      sku: raw.sku !== undefined ? raw.sku : undefined,
+      description: raw.description !== undefined ? raw.description : undefined,
+      price: raw.price !== undefined ? Number(raw.price) : undefined,
+      discount_price:
+        raw.discount_price !== undefined
+          ? raw.discount_price !== null && raw.discount_price !== ''
+            ? Number(raw.discount_price)
+            : null
+          : undefined,
+      // Store category UUID in category_id column. Never send 'category'
+      category_id:
+        raw.category_id !== undefined
+          ? (raw.category_id || null)
+          : raw.category && typeof raw.category === 'object' && raw.category.id
+          ? raw.category.id
+          : undefined,
+      material: raw.material !== undefined ? raw.material : undefined,
+      weight: raw.weight !== undefined ? raw.weight : raw.gross_weight !== undefined ? raw.gross_weight : undefined,
+      dimensions: raw.dimensions !== undefined ? raw.dimensions : undefined,
+      colour: raw.colour !== undefined ? raw.colour : undefined,
+      collection: raw.collection !== undefined ? raw.collection : raw.collection_name !== undefined ? raw.collection_name : undefined,
+      occasion: raw.occasion !== undefined ? raw.occasion : undefined,
+      stock_quantity: raw.stock_quantity !== undefined ? Number(raw.stock_quantity) : undefined,
+      is_featured: raw.is_featured !== undefined ? Boolean(raw.is_featured) : undefined,
+      is_active: raw.is_active !== undefined ? Boolean(raw.is_active) : undefined,
+    };
+
+    // Remove any undefined properties so partial updates don't overwrite unspecified fields
+    Object.keys(payload).forEach((key) => {
+      if (payload[key] === undefined) {
+        delete payload[key];
+      }
+    });
+
+    // CRITICAL: Strip any joined relation, client field, or non-existent columns.
+    // The products table in Supabase does NOT have a 'category' column, only 'category_id' (UUID).
+    delete payload.category;
+    delete payload.images;
+    delete payload.collection_name;
+    delete payload.gross_weight;
+    delete payload.id;
+
+    return payload;
+  },
+
   // Admin Product Operations
   async createProduct(productData: Partial<Product>, images: Array<{ url: string; isPrimary: boolean }>): Promise<Product> {
+    const payload = this.sanitizeProductPayload(productData);
+
     const { data, error } = await supabase
       .from('products')
-      .insert(productData)
-      .select()
+      .insert(payload)
+      .select(`
+        *,
+        category:categories(*),
+        images:product_images(*)
+      `)
       .single();
 
     if (error) throw error;
@@ -519,13 +602,18 @@ export const productsService = {
       await supabase.from('product_images').insert(imageRecords);
     }
 
-    return data;
+    return data as Product;
   },
 
   async updateProduct(id: string, productData: Partial<Product>): Promise<void> {
+    const payload: Record<string, any> = {
+      ...this.sanitizeProductPayload(productData),
+      updated_at: new Date().toISOString(),
+    };
+
     const { error } = await supabase
       .from('products')
-      .update({ ...productData, updated_at: new Date().toISOString() })
+      .update(payload)
       .eq('id', id);
 
     if (error) throw error;

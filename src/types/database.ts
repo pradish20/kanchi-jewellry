@@ -45,20 +45,44 @@ export interface Product {
   description: string | null;
   price: number;
   discount_price: number | null;
-  category_id: string | null;
+  category_id: string | null; // Database column: Foreign key UUID referencing categories(id)
   material: string | null;
   weight: string | null;
+  gross_weight?: string | null;
   dimensions: string | null;
   colour: string | null;
   collection: string | null;
+  collection_name?: string | null;
   occasion: string | null;
   stock_quantity: number;
   is_featured: boolean;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
-  category?: Category;
-  images?: ProductImage[];
+  category?: Category; // Joined relational object from categories table (never a string)
+  images?: ProductImage[]; // Joined relational object from product_images table
+}
+
+export interface ProductFormData {
+  id?: string;
+  name: string;
+  slug?: string;
+  sku: string;
+  description?: string | null;
+  price: number;
+  discount_price?: number | null;
+  category_id: string; // Foreign key UUID referencing categories(id). Never send 'category'
+  material?: string | null;
+  weight?: string | null;
+  gross_weight?: string | null;
+  dimensions?: string | null;
+  colour?: string | null;
+  collection?: string | null;
+  collection_name?: string | null;
+  occasion?: string | null;
+  stock_quantity: number;
+  is_featured: boolean;
+  is_active: boolean;
 }
 
 export interface OrderItem {

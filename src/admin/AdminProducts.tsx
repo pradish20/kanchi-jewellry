@@ -11,7 +11,7 @@ import {
   Sparkles,
   Search,
 } from 'lucide-react';
-import { Product, Category } from '../types/database';
+import { Product, Category, ProductFormData } from '../types/database';
 import { productsService } from '../services/productsService';
 
 export const AdminProducts: React.FC = () => {
@@ -19,7 +19,7 @@ export const AdminProducts: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductFormData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -30,7 +30,7 @@ export const AdminProducts: React.FC = () => {
     try {
       const [prodRes, cats] = await Promise.all([
         productsService.getProducts({ limit: 100 }),
-        productsService.getCategories(),
+        productsService.getAllCategoriesAdmin(),
       ]);
       setProducts(prodRes.products);
       setCategories(cats);
@@ -53,7 +53,7 @@ export const AdminProducts: React.FC = () => {
       description: '',
       price: 50000,
       discount_price: null,
-      category_id: categories[0]?.id || null,
+      category_id: categories.length > 0 ? categories[0].id : '',
       material: '22K Hallmarked Gold',
       weight: '12.0 grams',
       dimensions: 'Standard Luxury',
@@ -69,7 +69,27 @@ export const AdminProducts: React.FC = () => {
   };
 
   const handleOpenEditModal = (prod: Product) => {
-    setEditingProduct({ ...prod });
+    // Extract category UUID from category_id or joined category object
+    const targetCategoryId = prod.category_id || prod.category?.id || '';
+    setEditingProduct({
+      id: prod.id,
+      name: prod.name,
+      slug: prod.slug,
+      sku: prod.sku,
+      description: prod.description || '',
+      price: prod.price,
+      discount_price: prod.discount_price,
+      category_id: targetCategoryId,
+      material: prod.material || '',
+      weight: prod.weight || prod.gross_weight || '',
+      dimensions: prod.dimensions || '',
+      colour: prod.colour || '',
+      collection: prod.collection || prod.collection_name || '',
+      occasion: prod.occasion || '',
+      stock_quantity: prod.stock_quantity,
+      is_featured: prod.is_featured,
+      is_active: prod.is_active,
+    });
     setImageUrls(prod.images?.map((i) => i.public_url) || []);
     setIsModalOpen(true);
   };
@@ -92,6 +112,10 @@ export const AdminProducts: React.FC = () => {
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct?.name || !editingProduct?.price) return;
+    if (!editingProduct.category_id) {
+      alert('Please select a category for the product.');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -102,9 +126,24 @@ export const AdminProducts: React.FC = () => {
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/(^-|-$)+/g, '');
 
-      const payload = {
-        ...editingProduct,
+      // Sanitize product payload: ensure category_id is stored and 'category' is never sent
+      const payload: Partial<Product> = {
+        name: editingProduct.name,
         slug,
+        sku: editingProduct.sku,
+        description: editingProduct.description || null,
+        price: Number(editingProduct.price),
+        discount_price: editingProduct.discount_price ? Number(editingProduct.discount_price) : null,
+        category_id: editingProduct.category_id, // Store category UUID in category_id
+        material: editingProduct.material || null,
+        weight: editingProduct.weight || editingProduct.gross_weight || null,
+        dimensions: editingProduct.dimensions || null,
+        colour: editingProduct.colour || null,
+        collection: editingProduct.collection || editingProduct.collection_name || null,
+        occasion: editingProduct.occasion || null,
+        stock_quantity: Number(editingProduct.stock_quantity ?? 0),
+        is_featured: Boolean(editingProduct.is_featured),
+        is_active: Boolean(editingProduct.is_active ?? true),
       };
 
       if (editingProduct.id) {
@@ -442,19 +481,35 @@ export const AdminProducts: React.FC = () => {
 
                 <div>
                   <label className="block uppercase tracking-wider text-[11px] text-[#777777] mb-1">
-                    Category
+                    Category *
                   </label>
                   <select
+                    required
                     value={editingProduct.category_id || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, category_id: e.target.value || null })}
+                    onChange={(e) => {
+                      const selectedId = e.target.value || '';
+                      setEditingProduct((prev) => (prev ? { ...prev, category_id: selectedId } : null));
+                    }}
                     className="w-full bg-[#FAF9F5] border border-[#D6CEBE] px-3 py-2 text-xs text-[#111111]"
                   >
+                    <option value="">Select Category</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
                       </option>
                     ))}
+                    {editingProduct.category_id &&
+                      !categories.some((c) => c.id === editingProduct.category_id) && (
+                        <option value={editingProduct.category_id}>
+                          Current Category ({editingProduct.category_id})
+                        </option>
+                      )}
                   </select>
+                  {categories.length === 0 && (
+                    <span className="text-[10px] text-amber-700 block mt-1">
+                      No categories found in Supabase. Create categories in the Categories tab first.
+                    </span>
+                  )}
                 </div>
 
                 <div>
