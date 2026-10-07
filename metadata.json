@@ -1,0 +1,6 @@
+{
+  "name": "Kanchi Jewelry",
+  "description": "Production-ready luxury jewelry e-commerce platform with real Supabase database, authentication, storage, edge functions, and Razorpay payments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
