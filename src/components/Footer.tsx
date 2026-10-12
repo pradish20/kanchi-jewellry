@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Instagram, Facebook, Phone, Mail, MapPin, MessageSquare, ShieldCheck, Award, Sparkles } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
+import { Category } from '../types/database';
+import { productsService } from '../services/productsService';
 
 interface FooterProps {
   navigate: (route: string) => void;
@@ -9,6 +11,15 @@ interface FooterProps {
 export const Footer: React.FC<FooterProps> = ({ navigate }) => {
   const { settings } = useSettings();
   const info = settings.brand_info;
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    productsService.getCategories().then((cats) => {
+      if (cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    });
+  }, []);
 
   return (
     <footer className="bg-[#111111] text-[#FAF9F5] border-t border-[#262626] pt-16 pb-12 mt-20">
@@ -131,29 +142,44 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
               Fine Jewelry
             </h4>
             <ul className="space-y-2.5 text-xs text-[#A0A0A0]">
+              {categories.length > 0 ? (
+                categories.map((cat) => (
+                  <li key={cat.id}>
+                    <button
+                      onClick={() => navigate(`/jewelry/${cat.slug}`)}
+                      className="hover:text-[#FAF9F5] transition-colors"
+                    >
+                      {cat.name}
+                    </button>
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li>
+                    <button onClick={() => navigate('/jewelry/rings')} className="hover:text-[#FAF9F5] transition-colors">
+                      Rings
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/jewelry/chains')} className="hover:text-[#FAF9F5] transition-colors">
+                      Chains
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/jewelry/bracelets')} className="hover:text-[#FAF9F5] transition-colors">
+                      Bracelets
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/jewelry/necklaces')} className="hover:text-[#FAF9F5] transition-colors">
+                      Necklaces
+                    </button>
+                  </li>
+                </>
+              )}
               <li>
-                <button onClick={() => navigate('/jewelry/rings')} className="hover:text-[#FAF9F5] transition-colors">
-                  Rings
-                </button>
-              </li>
-              <li>
-                <button onClick={() => navigate('/jewelry/chains')} className="hover:text-[#FAF9F5] transition-colors">
-                  Chains
-                </button>
-              </li>
-              <li>
-                <button onClick={() => navigate('/jewelry/bracelets')} className="hover:text-[#FAF9F5] transition-colors">
-                  Bracelets
-                </button>
-              </li>
-              <li>
-                <button onClick={() => navigate('/jewelry/necklaces')} className="hover:text-[#FAF9F5] transition-colors">
-                  Necklaces
-                </button>
-              </li>
-              <li>
-                <button onClick={() => navigate('/jewelry')} className="hover:text-[#FAF9F5] transition-colors">
-                  Bridal Sets
+                <button onClick={() => navigate('/jewelry')} className="hover:text-[#C5A059] transition-colors text-[11px] uppercase tracking-wider">
+                  View All Collections →
                 </button>
               </li>
             </ul>

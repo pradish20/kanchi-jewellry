@@ -97,7 +97,18 @@ export const ShopPage: React.FC<ShopPageProps> = ({
     setPage(1);
   };
 
-  const currentCategory = categories.find((c) => c.slug === categorySlug);
+  const currentCategory = categories.find((c) => {
+    if (!categorySlug) return false;
+    const target = categorySlug.toLowerCase();
+    const singular = target.replace(/s$/, '');
+    return (
+      c.slug.toLowerCase() === target ||
+      c.id === categorySlug ||
+      c.name.toLowerCase() === target ||
+      c.slug.toLowerCase().replace(/s$/, '') === singular ||
+      c.name.toLowerCase().replace(/s$/, '') === singular
+    );
+  });
   const pageTitle = currentCategory ? currentCategory.name : 'All Fine Jewelry';
   const pageDescription = currentCategory
     ? currentCategory.description

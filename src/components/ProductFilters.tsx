@@ -54,19 +54,29 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
           >
             All Collections
           </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => onSelectCategory(cat.slug)}
-              className={`px-3 py-1.5 text-xs uppercase tracking-[0.15em] font-medium transition-colors whitespace-nowrap border-b-2 ${
-                selectedCategorySlug === cat.slug
-                  ? 'border-[#111111] text-[#111111]'
-                  : 'border-transparent text-[#666666] hover:text-[#111111]'
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const isSelected =
+              Boolean(selectedCategorySlug) &&
+              (cat.slug.toLowerCase() === selectedCategorySlug?.toLowerCase() ||
+                cat.id === selectedCategorySlug ||
+                cat.name.toLowerCase() === selectedCategorySlug?.toLowerCase() ||
+                cat.slug.toLowerCase().replace(/s$/, '') === selectedCategorySlug?.toLowerCase().replace(/s$/, '') ||
+                cat.name.toLowerCase().replace(/s$/, '') === selectedCategorySlug?.toLowerCase().replace(/s$/, ''));
+
+            return (
+              <button
+                key={cat.id}
+                onClick={() => onSelectCategory(cat.slug)}
+                className={`px-3 py-1.5 text-xs uppercase tracking-[0.15em] font-medium transition-colors whitespace-nowrap border-b-2 ${
+                  isSelected
+                    ? 'border-[#111111] text-[#111111]'
+                    : 'border-transparent text-[#666666] hover:text-[#111111]'
+                }`}
+              >
+                {cat.name}
+              </button>
+            );
+          })}
         </div>
 
         {/* Sort & Result Count */}

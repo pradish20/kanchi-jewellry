@@ -4,6 +4,8 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { Category } from '../types/database';
+import { productsService } from '../services/productsService';
 
 interface NavbarProps {
   currentRoute: string;
@@ -17,9 +19,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, navigate, onOpenSe
   const { user, isAdmin } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [jewelryDropdownOpen, setJewelryDropdownOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isConfigured = isSupabaseConfigured();
+
+  useEffect(() => {
+    productsService.getCategories().then((data) => {
+      if (data && data.length > 0) {
+        setCategories(data);
+      }
+    });
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -133,30 +144,48 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, navigate, onOpenSe
                   >
                     All Jewelry
                   </button>
-                  <button
-                    onClick={() => handleNav('/jewelry/rings')}
-                    className="w-full text-left px-3 py-2 text-xs uppercase tracking-[0.15em] text-[#444444] hover:bg-[#FAF9F5] hover:text-[#8C6D17] transition-colors"
-                  >
-                    Rings
-                  </button>
-                  <button
-                    onClick={() => handleNav('/jewelry/chains')}
-                    className="w-full text-left px-3 py-2 text-xs uppercase tracking-[0.15em] text-[#444444] hover:bg-[#FAF9F5] hover:text-[#8C6D17] transition-colors"
-                  >
-                    Chains
-                  </button>
-                  <button
-                    onClick={() => handleNav('/jewelry/bracelets')}
-                    className="w-full text-left px-3 py-2 text-xs uppercase tracking-[0.15em] text-[#444444] hover:bg-[#FAF9F5] hover:text-[#8C6D17] transition-colors"
-                  >
-                    Bracelets
-                  </button>
-                  <button
-                    onClick={() => handleNav('/jewelry/necklaces')}
-                    className="w-full text-left px-3 py-2 text-xs uppercase tracking-[0.15em] text-[#444444] hover:bg-[#FAF9F5] hover:text-[#8C6D17] transition-colors"
-                  >
-                    Necklaces
-                  </button>
+                  {categories.length > 0 ? (
+                    categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => handleNav(`/jewelry/${cat.slug}`)}
+                        className={`w-full text-left px-3 py-2 text-xs uppercase tracking-[0.15em] transition-colors ${
+                          currentRoute === `/jewelry/${cat.slug}`
+                            ? 'text-[#8C6D17] font-semibold bg-[#FAF9F5]'
+                            : 'text-[#444444] hover:bg-[#FAF9F5] hover:text-[#8C6D17]'
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleNav('/jewelry/rings')}
+                        className="w-full text-left px-3 py-2 text-xs uppercase tracking-[0.15em] text-[#444444] hover:bg-[#FAF9F5] hover:text-[#8C6D17] transition-colors"
+                      >
+                        Rings
+                      </button>
+                      <button
+                        onClick={() => handleNav('/jewelry/chains')}
+                        className="w-full text-left px-3 py-2 text-xs uppercase tracking-[0.15em] text-[#444444] hover:bg-[#FAF9F5] hover:text-[#8C6D17] transition-colors"
+                      >
+                        Chains
+                      </button>
+                      <button
+                        onClick={() => handleNav('/jewelry/bracelets')}
+                        className="w-full text-left px-3 py-2 text-xs uppercase tracking-[0.15em] text-[#444444] hover:bg-[#FAF9F5] hover:text-[#8C6D17] transition-colors"
+                      >
+                        Bracelets
+                      </button>
+                      <button
+                        onClick={() => handleNav('/jewelry/necklaces')}
+                        className="w-full text-left px-3 py-2 text-xs uppercase tracking-[0.15em] text-[#444444] hover:bg-[#FAF9F5] hover:text-[#8C6D17] transition-colors"
+                      >
+                        Necklaces
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -279,18 +308,34 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, navigate, onOpenSe
                   <button onClick={() => handleNav('/jewelry')} className="text-left py-1 hover:text-[#8C6D17]">
                     All Jewelry
                   </button>
-                  <button onClick={() => handleNav('/jewelry/rings')} className="text-left py-1 hover:text-[#8C6D17]">
-                    Rings
-                  </button>
-                  <button onClick={() => handleNav('/jewelry/chains')} className="text-left py-1 hover:text-[#8C6D17]">
-                    Chains
-                  </button>
-                  <button onClick={() => handleNav('/jewelry/bracelets')} className="text-left py-1 hover:text-[#8C6D17]">
-                    Bracelets
-                  </button>
-                  <button onClick={() => handleNav('/jewelry/necklaces')} className="text-left py-1 hover:text-[#8C6D17]">
-                    Necklaces
-                  </button>
+                  {categories.length > 0 ? (
+                    categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => handleNav(`/jewelry/${cat.slug}`)}
+                        className={`text-left py-1 hover:text-[#8C6D17] ${
+                          currentRoute === `/jewelry/${cat.slug}` ? 'text-[#8C6D17] font-semibold' : ''
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))
+                  ) : (
+                    <>
+                      <button onClick={() => handleNav('/jewelry/rings')} className="text-left py-1 hover:text-[#8C6D17]">
+                        Rings
+                      </button>
+                      <button onClick={() => handleNav('/jewelry/chains')} className="text-left py-1 hover:text-[#8C6D17]">
+                        Chains
+                      </button>
+                      <button onClick={() => handleNav('/jewelry/bracelets')} className="text-left py-1 hover:text-[#8C6D17]">
+                        Bracelets
+                      </button>
+                      <button onClick={() => handleNav('/jewelry/necklaces')} className="text-left py-1 hover:text-[#8C6D17]">
+                        Necklaces
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               <button

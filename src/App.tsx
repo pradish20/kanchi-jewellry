@@ -74,14 +74,18 @@ export default function App() {
 
     // 4. Jewelry Category Pages: /jewelry/:cat
     if (currentRoute.startsWith('/jewelry/')) {
-      const categorySlug = currentRoute.replace('/jewelry/', '');
-      return (
-        <ShopPage
-          categorySlug={categorySlug}
-          initialSearchQuery={searchParamQuery}
-          navigate={navigate}
-        />
-      );
+      const rawCategorySlug = currentRoute.replace('/jewelry/', '');
+      const categorySlug = rawCategorySlug.split('?')[0].split('#')[0].replace(/\/+$/, '');
+      if (categorySlug) {
+        return (
+          <ShopPage
+            categorySlug={decodeURIComponent(categorySlug)}
+            initialSearchQuery={searchParamQuery}
+            navigate={navigate}
+          />
+        );
+      }
+      return <ShopPage initialSearchQuery={searchParamQuery} navigate={navigate} />;
     }
 
     // 5. Main Shop: /jewelry

@@ -53,8 +53,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ slug, navi
 
           if (item?.category_id) {
             const rel = await productsService.getProducts({
+              categoryId: item.category_id,
               categorySlug: item.category?.slug,
-              limit: 4,
+              limit: 5,
             });
             if (mounted) {
               setRelatedProducts(rel.products.filter((p) => p.id !== item.id));

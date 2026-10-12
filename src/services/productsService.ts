@@ -343,22 +343,29 @@ export const productsService = {
   },
 
   async getProducts(params: GetProductsParams = {}): Promise<{ products: Product[]; total: number }> {
+    // 1. Fallback mode if Supabase credentials are not configured
     if (!isSupabaseConfigured()) {
       let filtered = [...FALLBACK_PRODUCTS];
 
-      if (params.categorySlug) {
+      if (params.categoryId) {
+        filtered = filtered.filter((p) => p.category_id === params.categoryId);
+      } else if (params.categorySlug) {
+        const rawSlug = params.categorySlug.trim().toLowerCase();
+        const singularSlug = rawSlug.replace(/s$/, '');
         const cat = FALLBACK_CATEGORIES.find(
           (c) =>
-            c.slug.toLowerCase() === params.categorySlug?.toLowerCase() ||
-            c.name.toLowerCase() === params.categorySlug?.toLowerCase()
+            c.id === params.categorySlug ||
+            c.slug.toLowerCase() === rawSlug ||
+            c.name.toLowerCase() === rawSlug ||
+            c.slug.toLowerCase().replace(/s$/, '') === singularSlug ||
+            c.name.toLowerCase().replace(/s$/, '') === singularSlug
         );
         if (cat) {
           filtered = filtered.filter((p) => p.category_id === cat.id);
+        } else {
+          // If a specific category was requested but does not exist, return empty
+          filtered = [];
         }
-      }
-
-      if (params.categoryId) {
-        filtered = filtered.filter((p) => p.category_id === params.categoryId);
       }
 
       if (params.featuredOnly) {
@@ -406,6 +413,7 @@ export const productsService = {
       return { products: paginated, total };
     }
 
+    // 2. Real Supabase database query mode
     try {
       let query = supabase
         .from('products')
@@ -416,30 +424,87 @@ export const productsService = {
         `, { count: 'exact' })
         .eq('is_active', true);
 
-      if (params.categorySlug) {
-        const { data: catData } = await supabase
-          .from('categories')
-          .select('id')
-          .ilike('slug', params.categorySlug)
-          .maybeSingle();
-
-        if (catData?.id) {
-          query = query.eq('category_id', catData.id);
-        } else {
-          const { data: catByName } = await supabase
-            .from('categories')
-            .select('id')
-            .ilike('name', params.categorySlug)
-            .maybeSingle();
-
-          if (catByName?.id) {
-            query = query.eq('category_id', catByName.id);
-          }
-        }
-      }
-
+      // Category filter resolution
       if (params.categoryId) {
         query = query.eq('category_id', params.categoryId);
+      } else if (params.categorySlug) {
+        const rawSlug = params.categorySlug.trim();
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawSlug);
+
+        if (isUUID) {
+          query = query.eq('category_id', rawSlug);
+        } else {
+          // Resolve category ID from categories table
+          let matchedCategoryId: string | null = null;
+
+          // Attempt exact slug match
+          const { data: catBySlug } = await supabase
+            .from('categories')
+            .select('id')
+            .ilike('slug', rawSlug)
+            .maybeSingle();
+
+          if (catBySlug?.id) {
+            matchedCategoryId = catBySlug.id;
+          } else {
+            // Attempt exact name match
+            const { data: catByName } = await supabase
+              .from('categories')
+              .select('id')
+              .ilike('name', rawSlug)
+              .maybeSingle();
+
+            if (catByName?.id) {
+              matchedCategoryId = catByName.id;
+            } else {
+              // Attempt singular and plural variations (e.g. 'ring' vs 'rings', 'chain' vs 'chains')
+              const singular = rawSlug.replace(/s$/i, '');
+              const plural = `${singular}s`;
+
+              const { data: catByVariation } = await supabase
+                .from('categories')
+                .select('id')
+                .or(`slug.ilike.${singular},slug.ilike.${plural},name.ilike.${singular},name.ilike.${plural}`)
+                .limit(1)
+                .maybeSingle();
+
+              if (catByVariation?.id) {
+                matchedCategoryId = catByVariation.id;
+              } else {
+                // Flexible scan of active categories in memory
+                const { data: allCategories } = await supabase
+                  .from('categories')
+                  .select('id, slug, name');
+
+                if (allCategories && allCategories.length > 0) {
+                  const normalizedTarget = rawSlug.toLowerCase().replace(/[^a-z0-9]/g, '');
+                  const found = allCategories.find((c) => {
+                    const normSlug = c.slug.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const normName = c.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    return (
+                      normSlug === normalizedTarget ||
+                      normName === normalizedTarget ||
+                      normSlug.replace(/s$/, '') === normalizedTarget.replace(/s$/, '') ||
+                      normName.replace(/s$/, '') === normalizedTarget.replace(/s$/, '')
+                    );
+                  });
+
+                  if (found) {
+                    matchedCategoryId = found.id;
+                  }
+                }
+              }
+            }
+          }
+
+          if (matchedCategoryId) {
+            query = query.eq('category_id', matchedCategoryId);
+          } else {
+            // A specific category was requested but does not exist in the database.
+            // Strictly return 0 results — NEVER leak products from other categories!
+            return { products: [], total: 0 };
+          }
+        }
       }
 
       if (params.featuredOnly) {
@@ -447,7 +512,9 @@ export const productsService = {
       }
 
       if (params.searchQuery) {
-        query = query.or(`name.ilike.%${params.searchQuery}%,description.ilike.%${params.searchQuery}%,sku.ilike.%${params.searchQuery}%,material.ilike.%${params.searchQuery}%`);
+        query = query.or(
+          `name.ilike.%${params.searchQuery}%,description.ilike.%${params.searchQuery}%,sku.ilike.%${params.searchQuery}%,material.ilike.%${params.searchQuery}%`
+        );
       }
 
       if (params.minPrice !== undefined) {
@@ -478,14 +545,15 @@ export const productsService = {
       query = query.range(offset, offset + limit - 1);
 
       const { data, count, error } = await query;
-      if (error || !data || data.length === 0) {
-        // Fallback to sample data if database has not been seeded yet
-        return this.getProducts({ ...params, limit: undefined, offset: undefined });
+      if (error) {
+        console.error('Supabase getProducts error:', error);
+        return { products: [], total: 0 };
       }
 
-      return { products: data as Product[], total: count || data.length };
-    } catch {
-      return this.getProducts({ ...params, limit: undefined, offset: undefined });
+      return { products: (data as Product[]) || [], total: count || data?.length || 0 };
+    } catch (err) {
+      console.error('getProducts exception:', err);
+      return { products: [], total: 0 };
     }
   },
 
